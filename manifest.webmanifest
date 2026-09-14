@@ -1,0 +1,17 @@
+{
+  "name": "Linea Viva - Anotador de softball",
+  "short_name": "Linea Viva",
+  "description": "Registro simple de turnos y corredores para softball.",
+  "start_url": "./",
+  "display": "standalone",
+  "background_color": "#f7f5ef",
+  "theme_color": "#123c2e",
+  "icons": [
+    {
+      "src": "icons/scorebook.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any"
+    }
+  ]
+}

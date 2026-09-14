@@ -1,0 +1,120 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#123c2e">
+  <meta name="description" content="Anotador simple de softball para registrar turnos y movimientos de corredores.">
+  <title>Linea Viva | Anotador de softball</title>
+  <link rel="manifest" href="manifest.webmanifest">
+  <link rel="icon" href="icons/scorebook.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+  <header class="app-header">
+    <a class="brand" href="#game" aria-label="Linea Viva, inicio">
+      <span class="brand-mark" aria-hidden="true">◆</span>
+      <span><strong>Linea Viva</strong><small>Anotador de softball</small></span>
+    </a>
+    <span id="save-status" class="save-status">Guardado local</span>
+  </header>
+
+  <nav class="tabs" aria-label="Secciones">
+    <button class="tab active" data-tab="game">Partido</button>
+    <button class="tab" data-tab="roster">Roster</button>
+    <button class="tab" data-tab="log">Bitacora</button>
+    <button class="tab" data-tab="data">Datos</button>
+  </nav>
+
+  <main>
+    <section id="game" class="view active" aria-labelledby="game-title">
+      <div id="game-setup" class="setup-panel">
+        <div class="section-heading">
+          <div><p class="eyebrow">Nuevo partido</p><h1 id="game-title">Prepara el lineup</h1></div>
+          <span id="roster-count" class="count-badge">0 jugadores</span>
+        </div>
+        <form id="game-form" class="game-form">
+          <label>Rival<input id="opponent" name="opponent" autocomplete="off" placeholder="Nombre del rival"></label>
+          <label>Fecha<input id="game-date" name="date" type="date" required></label>
+          <div class="lineup-heading"><strong>Orden al bate</strong><span>Usa las flechas para ordenar</span></div>
+          <ol id="lineup-list" class="lineup-list"></ol>
+          <button class="primary wide" type="submit">Iniciar partido</button>
+        </form>
+        <p id="empty-roster-note" class="empty-state">Primero agrega jugadores en la pestana Roster.</p>
+      </div>
+
+      <div id="game-live" class="game-live" hidden>
+        <div class="score-strip">
+          <div><span>Entrada</span><strong id="inning-value">1</strong></div>
+          <div><span>Outs</span><strong id="outs-value">0</strong></div>
+          <div class="runs"><span>Carreras</span><strong id="runs-value">0</strong></div>
+        </div>
+
+        <div class="game-context">
+          <div><span id="game-opponent">vs. Rival</span><small id="game-date-label"></small></div>
+          <button id="finish-game" class="text-button danger" type="button">Finalizar</button>
+        </div>
+
+        <div class="field-layout">
+          <div class="diamond" aria-label="Corredores en base">
+            <div class="base-path path-one"></div><div class="base-path path-two"></div>
+            <div class="base-path path-three"></div><div class="base-path path-home"></div>
+            <button id="base-second" class="base second" data-base="second" type="button" aria-label="Segunda base"><span>2B</span></button>
+            <button id="base-third" class="base third" data-base="third" type="button" aria-label="Tercera base"><span>3B</span></button>
+            <button id="base-first" class="base first" data-base="first" type="button" aria-label="Primera base"><span>1B</span></button>
+            <div class="home-plate" aria-hidden="true"></div>
+            <div class="field-center"><span>AL BATE</span><strong id="current-batter">-</strong></div>
+          </div>
+
+          <aside id="runner-panel" class="runner-panel" hidden>
+            <div><span>Corredor seleccionado</span><strong id="selected-runner">-</strong></div>
+            <label>Jugada<select id="runner-event-label"><option>Robo de base</option><option>Atrapado robando</option><option>Wild pitch</option><option>Passed ball</option><option>Avance</option></select></label>
+            <label>Destino<select id="runner-destination"></select></label>
+            <div class="button-row"><button id="record-runner" class="secondary" type="button">Registrar</button><button id="cancel-runner" class="text-button" type="button">Cancelar</button></div>
+          </aside>
+        </div>
+
+        <form id="play-form" class="play-panel">
+          <div class="play-title"><div><span>Resultado del turno</span><strong id="play-batter">-</strong></div><select id="play-result" aria-label="Resultado del turno"></select></div>
+          <div id="movements" class="movements"></div>
+          <button class="primary wide" type="submit">Registrar jugada</button>
+        </form>
+
+        <div class="game-actions">
+          <button id="undo-play" class="secondary" type="button">↶ Deshacer ultima</button>
+          <button id="end-inning" class="secondary" type="button">Cerrar entrada</button>
+        </div>
+      </div>
+    </section>
+
+    <section id="roster" class="view" aria-labelledby="roster-title">
+      <div class="section-heading"><div><p class="eyebrow">Tu equipo</p><h1 id="roster-title">Roster</h1></div></div>
+      <form id="roster-form" class="roster-form">
+        <label class="number-field">Numero<input name="number" inputmode="numeric" maxlength="3" placeholder="24"></label>
+        <label>Nombre<input name="name" required autocomplete="off" placeholder="Nombre del jugador"></label>
+        <label>Posicion<input name="position" autocomplete="off" placeholder="SS"></label>
+        <button class="primary" type="submit">Agregar</button>
+      </form>
+      <div id="roster-list" class="roster-list"></div>
+    </section>
+
+    <section id="log" class="view" aria-labelledby="log-title">
+      <div class="section-heading"><div><p class="eyebrow">Jugada por jugada</p><h1 id="log-title">Bitacora</h1></div><span id="event-count" class="count-badge">0 eventos</span></div>
+      <div id="log-list" class="log-list"></div>
+    </section>
+
+    <section id="data" class="view" aria-labelledby="data-title">
+      <div class="section-heading"><div><p class="eyebrow">Respaldo</p><h1 id="data-title">Datos</h1></div></div>
+      <div class="data-actions">
+        <button id="export-data" class="primary" type="button">Descargar respaldo JSON</button>
+        <label class="file-button">Importar respaldo<input id="import-data" type="file" accept="application/json"></label>
+        <button id="reset-data" class="secondary danger" type="button">Borrar todos los datos</button>
+      </div>
+      <p class="storage-note">Los datos quedan en este navegador. Descarga un respaldo al terminar cada partido.</p>
+    </section>
+  </main>
+
+  <div id="toast" class="toast" role="status" aria-live="polite" hidden></div>
+  <script type="module" src="js/app.js"></script>
+</body>
+</html>
