@@ -53,9 +53,20 @@ input, select { width: 100%; min-height: 44px; padding: 9px 11px; border: 1px so
 .empty-state, .storage-note { padding: 22px; border: 1px dashed #aeb8b2; color: var(--muted); text-align: center; background: rgba(255,255,255,.5); }
 
 .game-form { display: grid; grid-template-columns: 1fr 180px; gap: 16px; }
-.lineup-heading, .lineup-list, .game-form .wide { grid-column: 1 / -1; }
+.lineup-heading, .game-day-roster, .lineup-list, .game-form .wide { grid-column: 1 / -1; }
 .lineup-heading { display: flex; justify-content: space-between; margin-top: 8px; }
 .lineup-heading span { color: var(--muted); font-size: 12px; }
+.game-day-roster { display: grid; gap: 6px; }
+.game-day-player { min-height: 58px; display: grid; grid-template-columns: 54px 42px minmax(120px, 1fr) minmax(150px, 210px); align-items: center; gap: 10px; padding: 7px 10px; border: 1px solid var(--line); background: white; }
+.game-day-player.absent { color: var(--muted); background: rgba(255, 255, 255, .55); }
+.availability { position: relative; display: inline-flex; width: 46px; height: 26px; }
+.availability input { position: absolute; width: 1px; height: 1px; opacity: 0; }
+.availability span { width: 46px; height: 26px; border-radius: 13px; background: #aeb7b2; transition: background .15s ease; }
+.availability span::after { content: ""; display: block; width: 20px; height: 20px; margin: 3px; border-radius: 50%; background: white; box-shadow: 0 1px 3px rgba(0,0,0,.25); transition: transform .15s ease; }
+.availability input:checked + span { background: var(--field); }
+.availability input:checked + span::after { transform: translateX(20px); }
+.availability input:focus-visible + span { outline: 3px solid var(--yellow); outline-offset: 2px; }
+.game-day-position { min-height: 40px; }
 .lineup-list { display: grid; gap: 6px; margin: 0; padding: 0; list-style: none; counter-reset: lineup; }
 .lineup-item { min-height: 48px; display: grid; grid-template-columns: 30px 42px 1fr auto; align-items: center; gap: 8px; padding: 6px 8px; border: 1px solid var(--line); background: white; counter-increment: lineup; }
 .lineup-item::before { content: counter(lineup); color: var(--clay); font-weight: 900; text-align: center; }
@@ -105,9 +116,32 @@ input, select { width: 100%; min-height: 44px; padding: 9px 11px; border: 1px so
 .movement span { font-weight: 800; }
 .game-actions { display: flex; justify-content: space-between; gap: 10px; margin-top: 12px; }
 
-.roster-form { display: grid; grid-template-columns: 90px 1.5fr 1fr auto; align-items: end; gap: 12px; padding: 18px; border: 1px solid var(--line); background: white; }
+.lineup-columns { display: grid; grid-template-columns: minmax(0, 1.5fr) minmax(260px, .75fr); gap: 24px; align-items: start; }
+.live-lineup-list { display: grid; gap: 8px; margin: 0; padding: 0; list-style: none; counter-reset: live-lineup; }
+.live-lineup-slot { display: grid; grid-template-columns: 34px 42px minmax(120px, 1fr) minmax(170px, 220px); align-items: center; gap: 9px; min-height: 62px; padding: 8px 10px; border: 1px solid var(--line); background: white; counter-increment: live-lineup; }
+.live-lineup-slot::before { content: counter(live-lineup); color: var(--clay); font-weight: 900; text-align: center; }
+.slot-player strong, .slot-player small { display: block; }
+.slot-player small { color: var(--muted); }
+.substitution-select { min-height: 40px; }
+.bench-list { display: grid; gap: 6px; }
+.bench-player { display: grid; grid-template-columns: 38px 1fr auto; align-items: center; gap: 9px; min-height: 52px; padding: 7px; border-bottom: 1px solid var(--line); background: white; }
+.bench-player .jersey { width: 32px; height: 32px; }
+.player-status { padding: 4px 6px; color: var(--muted); background: #eef1ee; font-size: 10px; font-weight: 800; text-transform: uppercase; }
+.player-status.available { color: var(--field-dark); background: #dcebe3; }
+.player-status.finished { color: #8b3930; background: #f4dfdb; }
+.confirm-dialog { width: min(92vw, 480px); padding: 24px; border: 1px solid var(--line); border-radius: 6px; color: var(--ink); background: white; box-shadow: 0 24px 70px rgba(0,0,0,.3); }
+.confirm-dialog::backdrop { background: rgba(10, 25, 19, .68); }
+.confirm-dialog h2 { margin: 4px 0 10px; font: 700 28px Georgia, serif; }
+.confirm-dialog p:not(.eyebrow) { color: var(--muted); line-height: 1.5; }
+.dialog-actions { display: flex; justify-content: flex-end; gap: 10px; margin-top: 20px; }
+.danger-fill { border-color: #9b382d; background: #9b382d; }
+.danger-fill:hover { background: #7e2c24; }
+
+.roster-note { margin: -10px 0 18px; color: var(--muted); }
+.roster-form { display: grid; grid-template-columns: 90px 1.5fr 1fr auto auto; align-items: end; gap: 12px; padding: 18px; border: 1px solid var(--line); background: white; }
 .roster-list { display: grid; margin-top: 16px; border-top: 1px solid var(--line); }
-.roster-player { display: grid; grid-template-columns: 50px 1fr 80px auto; align-items: center; gap: 10px; min-height: 58px; border-bottom: 1px solid var(--line); }
+.roster-player { display: grid; grid-template-columns: 50px 1fr 110px auto; align-items: center; gap: 10px; min-height: 58px; border-bottom: 1px solid var(--line); }
+.roster-actions { display: flex; gap: 2px; }
 .roster-player .position { color: var(--muted); font-size: 13px; }
 .log-list { display: grid; gap: 8px; }
 .log-event { display: grid; grid-template-columns: 74px 1fr auto; gap: 12px; align-items: center; padding: 14px; border-left: 4px solid var(--field); background: white; box-shadow: 0 2px 8px rgba(23,33,29,.05); }
@@ -127,11 +161,15 @@ input, select { width: 100%; min-height: 44px; padding: 9px 11px; border: 1px so
   .tabs { justify-content: stretch; }
   .tab { flex: 1; padding: 0 6px; font-size: 13px; }
   main { width: min(100% - 20px, 1040px); margin-top: 20px; }
-  .game-form, .field-layout, .play-title, .roster-form, .data-actions { grid-template-columns: 1fr; }
-  .game-form > *, .lineup-heading, .lineup-list, .game-form .wide { grid-column: 1; }
+  .game-form, .field-layout, .play-title, .roster-form, .data-actions, .lineup-columns { grid-template-columns: 1fr; }
+  .game-form > *, .lineup-heading, .game-day-roster, .lineup-list, .game-form .wide { grid-column: 1; }
   .field-layout { gap: 12px; }
   .diamond { width: 100%; }
   .roster-form { align-items: stretch; }
+  .game-day-player { grid-template-columns: 48px 40px 1fr; }
+  .game-day-position { grid-column: 2 / -1; }
+  .live-lineup-slot { grid-template-columns: 28px 40px 1fr; }
+  .substitution-select { grid-column: 2 / -1; }
   .number-field { max-width: 110px; }
   .log-event { grid-template-columns: 62px 1fr; }
   .log-score { grid-column: 2; }

@@ -1,10 +1,11 @@
-const CACHE_NAME = "linea-viva-v1";
+const CACHE_NAME = "linea-viva-v3";
 const APP_FILES = [
   "./",
   "./index.html",
   "./css/style.css",
   "./js/app.js",
   "./js/store.js",
+  "./data/roster.json",
   "./manifest.webmanifest",
   "./icons/scorebook.svg",
 ];

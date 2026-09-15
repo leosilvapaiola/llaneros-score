@@ -21,6 +21,7 @@
 
   <nav class="tabs" aria-label="Secciones">
     <button class="tab active" data-tab="game">Partido</button>
+    <button class="tab" data-tab="lineup">Line-up</button>
     <button class="tab" data-tab="roster">Roster</button>
     <button class="tab" data-tab="log">Bitacora</button>
     <button class="tab" data-tab="data">Datos</button>
@@ -36,7 +37,9 @@
         <form id="game-form" class="game-form">
           <label>Rival<input id="opponent" name="opponent" autocomplete="off" placeholder="Nombre del rival"></label>
           <label>Fecha<input id="game-date" name="date" type="date" required></label>
-          <div class="lineup-heading"><strong>Orden al bate</strong><span>Usa las flechas para ordenar</span></div>
+          <div class="lineup-heading"><strong>Disponibilidad y defensa</strong><span id="starter-count">0 titulares</span></div>
+          <div id="game-day-roster" class="game-day-roster"></div>
+          <div class="lineup-heading"><strong>Orden al bate</strong><span>10 u 11 jugadores · usa las flechas</span></div>
           <ol id="lineup-list" class="lineup-list"></ol>
           <button class="primary wide" type="submit">Iniciar partido</button>
         </form>
@@ -87,13 +90,32 @@
       </div>
     </section>
 
+    <section id="lineup" class="view" aria-labelledby="lineup-title">
+      <div class="section-heading"><div><p class="eyebrow">Cambios durante el juego</p><h1 id="lineup-title">Line-up</h1></div><span id="lineup-status" class="count-badge">Sin partido</span></div>
+      <div id="live-lineup-content" hidden>
+        <div class="lineup-columns">
+          <div>
+            <div class="lineup-heading"><strong>Orden activo</strong><span>El turno permanece en su lugar</span></div>
+            <ol id="live-lineup-list" class="live-lineup-list"></ol>
+          </div>
+          <aside>
+            <div class="lineup-heading"><strong>Banco</strong><span>Estado actual</span></div>
+            <div id="bench-list" class="bench-list"></div>
+          </aside>
+        </div>
+      </div>
+      <p id="lineup-empty" class="empty-state">Inicia un partido para administrar sustituciones.</p>
+    </section>
+
     <section id="roster" class="view" aria-labelledby="roster-title">
-      <div class="section-heading"><div><p class="eyebrow">Tu equipo</p><h1 id="roster-title">Roster</h1></div></div>
-      <form id="roster-form" class="roster-form">
+      <div class="section-heading"><div><p class="eyebrow">Plantel permanente</p><h1 id="roster-title">Roster</h1></div><button id="toggle-roster-edit" class="secondary" type="button">Editar roster</button></div>
+      <p class="roster-note">Este plantel se carga automaticamente. La asistencia y posicion de cada partido se definen en Partido.</p>
+      <form id="roster-form" class="roster-form" hidden>
         <label class="number-field">Numero<input name="number" inputmode="numeric" maxlength="3" placeholder="24"></label>
         <label>Nombre<input name="name" required autocomplete="off" placeholder="Nombre del jugador"></label>
-        <label>Posicion<input name="position" autocomplete="off" placeholder="SS"></label>
-        <button class="primary" type="submit">Agregar</button>
+        <label>Posicion habitual<select id="roster-position" name="position"></select></label>
+        <button id="save-player" class="primary" type="submit">Agregar</button>
+        <button id="cancel-player-edit" class="text-button" type="button" hidden>Cancelar</button>
       </form>
       <div id="roster-list" class="roster-list"></div>
     </section>
@@ -113,6 +135,21 @@
       <p class="storage-note">Los datos quedan en este navegador. Descarga un respaldo al terminar cada partido.</p>
     </section>
   </main>
+
+  <dialog id="finish-dialog" class="confirm-dialog">
+    <div id="finish-step-one">
+      <p class="eyebrow">Primera confirmacion</p>
+      <h2>Finalizar el partido?</h2>
+      <p>El partido puede terminar en cualquier entrada por el limite de 90 minutos. Esta accion cierra el registro de jugadas.</p>
+      <div class="dialog-actions"><button class="secondary close-finish-dialog" type="button">Cancelar</button><button id="continue-finish" class="primary danger-fill" type="button">Continuar</button></div>
+    </div>
+    <div id="finish-step-two" hidden>
+      <p class="eyebrow">Confirmacion final</p>
+      <h2>Escribe FINALIZAR</h2>
+      <label>Confirmacion<input id="finish-confirmation" autocomplete="off" placeholder="FINALIZAR"></label>
+      <div class="dialog-actions"><button class="secondary close-finish-dialog" type="button">Cancelar</button><button id="confirm-finish" class="primary danger-fill" type="button" disabled>Finalizar partido</button></div>
+    </div>
+  </dialog>
 
   <div id="toast" class="toast" role="status" aria-live="polite" hidden></div>
   <script type="module" src="js/app.js"></script>

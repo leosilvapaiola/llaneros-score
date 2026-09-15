@@ -5,7 +5,15 @@ Aplicacion web movil para registrar la ofensiva de un equipo de softball. Guarda
 ## Funciones actuales
 
 - Roster propio con numero, nombre y posicion.
-- Lineup reordenable antes del partido.
+- Roster permanente precargado desde JSON y editor para cambios ocasionales.
+- Disponibilidad por partido y posicion asignada con `P`, `C`, `1B`, `2B`, `3B`, `SS`, `LF`, `CF`, `RF`, `SF`, `DH` o `Banco`.
+- Control de posiciones duplicadas, con excepcion de `Banco`.
+- Lineup reordenable de 10 u 11 titulares antes del partido.
+- Vista **Line-up** separada para sustituciones durante el partido.
+- Reingreso del titular solamente en su lugar original del orden al bate.
+- Un sustituto que regresa al banco queda fuera por el resto del partido.
+- Sustituciones y turnos del jugador entrante registrados en la Bitacora.
+- Finalizacion manual en cualquier entrada con doble confirmacion.
 - Entrada, outs, carreras y bateador actual.
 - Diamante interactivo con corredores en base.
 - Resultados preconfigurados con destinos editables para cada corredor.
@@ -35,8 +43,32 @@ Abrir `http://localhost:8080`.
 3. Elegir el resultado del turno y revisar los destinos sugeridos.
 4. Ajustar cualquier destino especial y registrar la jugada.
 5. Tocar una base ocupada para registrar un evento del corredor sin avanzar el lineup.
-6. Consultar **Bitacora** o deshacer la ultima jugada si hubo un error.
-7. Descargar un respaldo JSON al terminar el partido.
+6. Abrir **Line-up** para sustituir un jugador. El reemplazo conserva el lugar del orden al bate.
+7. Consultar **Bitacora** o deshacer la ultima jugada si hubo un error.
+8. Al cumplirse el tiempo, usar **Finalizar** y completar las dos confirmaciones.
+9. Descargar un respaldo JSON al terminar el partido.
+
+### Regla de reingreso
+
+Cada lugar del orden al bate conserva al titular original. Cuando entra un jugador del banco, ocupa ese mismo lugar y sus apariciones se guardan a su nombre. El titular sustituido queda en el banco y puede reingresar solamente en su lugar original. Si el titular reingresa o entra otro jugador, el sustituto saliente queda marcado como no disponible y no puede volver al juego.
+
+## Roster precargado
+
+El roster inicial vive en `data/roster.json`. Para cargar el plantel real antes de publicar, completar la lista `players`:
+
+```json
+{
+	"team": "Nombre del equipo",
+	"players": [
+		{ "id": "p-01", "number": "7", "name": "Nombre Apellido", "position": "SS" },
+		{ "id": "p-02", "number": "24", "name": "Nombre Apellido", "position": "BENCH" }
+	]
+}
+```
+
+Los codigos validos son `P`, `C`, `1B`, `2B`, `3B`, `SS`, `LF`, `CF`, `RF`, `SF`, `DH` y `BENCH`. La posicion del JSON es solamente el valor habitual que aparece seleccionado al preparar un partido; puede cambiarse para cada fecha.
+
+El archivo se importa la primera vez que el navegador abre la aplicacion. Despues, **Editar roster** guarda cambios locales. Para volver a cargar una version nueva del JSON, exportar primero cualquier partido necesario y usar **Borrar todos los datos**.
 
 Los datos viven en `localStorage` dentro del navegador. Borrar los datos del sitio o cambiar de dispositivo elimina el estado local salvo que exista un respaldo JSON.
 
@@ -70,6 +102,7 @@ index.html              Interfaz y vistas
 css/style.css           Diseno responsive
 js/app.js               Eventos y renderizado
 js/store.js             Estado y reglas del partido
+data/roster.json        Plantel inicial del equipo
 manifest.webmanifest    Instalacion como aplicacion
 service-worker.js       Cache para uso sin conexion
 icons/scorebook.svg     Icono de la aplicacion

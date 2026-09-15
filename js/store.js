@@ -4,6 +4,7 @@ const emptyBases = () => ({ first: null, second: null, third: null });
 
 const initialState = () => ({
   roster: [],
+  rosterSourceLoaded: false,
   game: null,
 });
 
@@ -35,8 +36,8 @@ function createId() {
 }
 
 function gameSnapshot() {
-  const { inning, outs, runs, bases, battingIndex } = state.game;
-  return clone({ inning, outs, runs, bases, battingIndex });
+  const { inning, outs, runs, bases, battingIndex, lineupSlots, gameDay } = state.game;
+  return clone({ inning, outs, runs, bases, battingIndex, lineupSlots, gameDay });
 }
 
 function restoreSnapshot(snapshot) {
@@ -45,6 +46,24 @@ function restoreSnapshot(snapshot) {
 
 function playerName(playerId) {
   return state.roster.find((player) => player.id === playerId)?.name ?? "Jugador desconocido";
+}
+
+function ensureLineupModel(game = state.game) {
+  if (!game || game.lineupSlots) return;
+  game.lineupSlots = game.lineup.map((playerId, index) => {
+    const assignment = game.gameDay.find((item) => item.playerId === playerId);
+    return {
+      index,
+      starterPlayerId: playerId,
+      currentPlayerId: playerId,
+      position: assignment?.position ?? "",
+    };
+  });
+  game.gameDay = game.gameDay.map((assignment) => ({
+    ...assignment,
+    role: game.lineup.includes(assignment.playerId) ? "starter" : "substitute",
+    status: !assignment.available ? "absent" : game.lineup.includes(assignment.playerId) ? "active" : "bench",
+  }));
 }
 
 function completeEvent(event, before) {
@@ -92,6 +111,7 @@ function applyMovements(movements) {
 }
 
 export function getState() {
+  ensureLineupModel();
   return clone(state);
 }
 
@@ -107,19 +127,75 @@ export function addPlayer({ number, name, position }) {
   saveState();
 }
 
+export function updatePlayer(playerId, { number, name, position }) {
+  if (state.game?.active) throw new Error("No puedes modificar el roster durante un partido.");
+  const player = state.roster.find((item) => item.id === playerId);
+  if (!player) throw new Error("No se encontro el jugador.");
+  const cleanName = name.trim();
+  if (!cleanName) throw new Error("Ingresa el nombre del jugador.");
+  Object.assign(player, {
+    number: String(number).trim(),
+    name: cleanName,
+    position: position.trim(),
+  });
+  saveState();
+}
+
+export function initializeRoster(players) {
+  if (state.rosterSourceLoaded || state.roster.length) {
+    if (!state.rosterSourceLoaded) {
+      state.rosterSourceLoaded = true;
+      saveState();
+    }
+    return;
+  }
+  state.roster = players.map((player) => ({
+    id: player.id || createId(),
+    number: String(player.number ?? "").trim(),
+    name: String(player.name ?? "").trim(),
+    position: String(player.position ?? "").trim(),
+  })).filter((player) => player.name);
+  state.rosterSourceLoaded = true;
+  saveState();
+}
+
 export function removePlayer(playerId) {
   if (state.game?.active) throw new Error("No puedes modificar el roster durante un partido.");
   state.roster = state.roster.filter((player) => player.id !== playerId);
   saveState();
 }
 
-export function startGame({ opponent, date, lineup }) {
-  if (!lineup.length) throw new Error("Agrega al menos un jugador al lineup.");
+export function startGame({ opponent, date, lineup, gameDay }) {
+  if (lineup.length < 10 || lineup.length > 11) {
+    throw new Error("El lineup debe tener 10 u 11 titulares.");
+  }
+  const starters = gameDay.filter((assignment) => assignment.available && assignment.position !== "BENCH");
+  const positions = starters.map((assignment) => assignment.position);
+  if (positions.some((position) => !position)) {
+    throw new Error("Asigna una posicion a cada jugador disponible.");
+  }
+  if (new Set(positions).size !== positions.length) {
+    throw new Error("Las posiciones titulares no pueden repetirse.");
+  }
+  if (lineup.some((playerId) => !starters.some((assignment) => assignment.playerId === playerId))) {
+    throw new Error("El lineup contiene un jugador sin posicion de campo.");
+  }
   state.game = {
     active: true,
     opponent: opponent.trim() || "Rival",
     date,
     lineup: [...lineup],
+    lineupSlots: lineup.map((playerId, index) => ({
+      index,
+      starterPlayerId: playerId,
+      currentPlayerId: playerId,
+      position: gameDay.find((assignment) => assignment.playerId === playerId).position,
+    })),
+    gameDay: gameDay.map((assignment) => ({
+      ...clone(assignment),
+      role: lineup.includes(assignment.playerId) ? "starter" : "substitute",
+      status: !assignment.available ? "absent" : lineup.includes(assignment.playerId) ? "active" : "bench",
+    })),
     inning: 1,
     outs: 0,
     runs: 0,
@@ -132,9 +208,51 @@ export function startGame({ opponent, date, lineup }) {
 }
 
 export function currentBatter(game = state.game) {
-  if (!game?.lineup.length) return null;
-  const playerId = game.lineup[game.battingIndex % game.lineup.length];
+  ensureLineupModel(game);
+  if (!game?.lineupSlots.length) return null;
+  const playerId = game.lineupSlots[game.battingIndex % game.lineupSlots.length].currentPlayerId;
   return state.roster.find((player) => player.id === playerId) ?? null;
+}
+
+export function substitutePlayer(slotIndex, incomingPlayerId) {
+  if (!state.game?.active) throw new Error("No hay un partido activo.");
+  ensureLineupModel();
+  const slot = state.game.lineupSlots[slotIndex];
+  const incoming = state.game.gameDay.find((assignment) => assignment.playerId === incomingPlayerId);
+  if (!slot || !incoming) throw new Error("La sustitucion no es valida.");
+  if (incoming.status === "finished" || incoming.status === "absent") {
+    throw new Error("Ese jugador ya no esta disponible.");
+  }
+  if (incoming.status === "active") throw new Error("Ese jugador ya esta en el lineup.");
+  if (incoming.role === "starter" && incoming.playerId !== slot.starterPlayerId) {
+    throw new Error("Un titular solo puede reingresar en su lugar original.");
+  }
+
+  const outgoingPlayerId = slot.currentPlayerId;
+  const outgoing = state.game.gameDay.find((assignment) => assignment.playerId === outgoingPlayerId);
+  const before = gameSnapshot();
+  outgoing.status = outgoing.role === "starter" ? "bench" : "finished";
+  outgoing.position = "BENCH";
+  incoming.status = "active";
+  incoming.position = slot.position;
+  slot.currentPlayerId = incomingPlayerId;
+
+  completeEvent({
+    id: createId(),
+    kind: "substitution",
+    label: "Sustitucion",
+    playerId: incomingPlayerId,
+    playerName: playerName(incomingPlayerId),
+    incomingPlayerId,
+    incomingPlayerName: playerName(incomingPlayerId),
+    outgoingPlayerId,
+    outgoingPlayerName: playerName(outgoingPlayerId),
+    slotIndex,
+    position: slot.position,
+    outsAdded: 0,
+    runsAdded: 0,
+    createdAt: new Date().toISOString(),
+  }, before);
 }
 
 export function recordPlateAppearance(result, movements) {
