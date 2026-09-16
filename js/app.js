@@ -61,6 +61,16 @@ const byId = (id) => document.getElementById(id);
 const escapeHtml = (value) => String(value ?? "").replace(/[&<>'"]/g, (character) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", "'": "&#39;", '"': "&quot;" }[character]));
 const playerById = (state, id) => state.roster.find((player) => player.id === id);
 
+export function exportFileName(state) {
+  const timestamp = new Date().toISOString().replace(/\.\d{3}Z$/, "Z").replaceAll(":", "-");
+  const opponent = (state.game?.opponent || "Rival")
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .replace(/[^a-zA-Z0-9]+/g, "-")
+    .replace(/^-|-$/g, "") || "Rival";
+  return `${timestamp}-vs-${opponent}-linea-viva.json`;
+}
+
 function normalizedPosition(position) {
   const code = String(position ?? "").trim().toUpperCase();
   return Object.hasOwn(POSITIONS, code) ? code : "";
@@ -504,7 +514,7 @@ byId("export-data").addEventListener("click", () => {
   const blob = new Blob([exportData()], { type: "application/json" });
   const link = document.createElement("a");
   link.href = URL.createObjectURL(blob);
-  link.download = `linea-viva-${new Date().toISOString().slice(0, 10)}.json`;
+  link.download = exportFileName(getState());
   document.body.append(link);
   link.click();
   link.remove();

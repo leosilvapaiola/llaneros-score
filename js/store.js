@@ -142,7 +142,7 @@ export function updatePlayer(playerId, { number, name, position }) {
 }
 
 export function initializeRoster(players) {
-  if (state.rosterSourceLoaded || state.roster.length) {
+  if (state.roster.length) {
     if (!state.rosterSourceLoaded) {
       state.rosterSourceLoaded = true;
       saveState();
