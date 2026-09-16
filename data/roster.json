@@ -1,7 +1,7 @@
 {
   "team": "Mi equipo",
   "players": [
-    { "id": "player-05-leonardo-silva", "number": "5", "name": "Leonardo Silva", "positions": ["P"] },
+    { "id": "player-05-leonardo-silva", "number": "5", "name": "Leonardo Silva", "positions": ["P", "SS", "3B"] },
     { "id": "player-04-José-zorrilla", "number": "4", "name": "José Zorrilla", "positions": ["2B"] },
     { "id": "player-09-hector-silva", "number": "9", "name": "Héctor Silva", "positions": ["LF"] },
     { "id": "player-24-felix-juarez", "number": "24", "name": "Félix Juárez", "positions": ["C"] },
