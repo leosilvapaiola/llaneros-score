@@ -113,7 +113,7 @@
       <form id="roster-form" class="roster-form" hidden>
         <label class="number-field">Numero<input name="number" inputmode="numeric" maxlength="3" placeholder="24"></label>
         <label>Nombre<input name="name" required autocomplete="off" placeholder="Nombre del jugador"></label>
-        <label>Posicion habitual<select id="roster-position" name="position"></select></label>
+        <label>Posiciones habituales<select id="roster-position" name="positions" multiple size="5"></select></label>
         <button id="save-player" class="primary" type="submit">Agregar</button>
         <button id="cancel-player-edit" class="text-button" type="button" hidden>Cancelar</button>
       </form>

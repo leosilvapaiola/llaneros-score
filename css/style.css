@@ -43,6 +43,7 @@ h1 { margin: 2px 0 0; font: 700 clamp(28px, 5vw, 42px) Georgia, serif; letter-sp
 .count-badge { padding: 6px 9px; border: 1px solid var(--line); background: white; color: var(--muted); font-size: 12px; font-weight: 700; }
 label { display: grid; gap: 6px; color: var(--muted); font-size: 12px; font-weight: 700; }
 input, select { width: 100%; min-height: 44px; padding: 9px 11px; border: 1px solid #b8c0bb; border-radius: 4px; color: var(--ink); background: white; }
+select[multiple] { min-height: 120px; }
 .primary, .secondary, .file-button { min-height: 44px; padding: 10px 16px; border-radius: 4px; font-weight: 800; }
 .primary { border: 1px solid var(--field-dark); color: white; background: var(--field-dark); }
 .primary:hover { background: var(--field); }

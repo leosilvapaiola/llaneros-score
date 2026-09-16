@@ -60,13 +60,13 @@ El roster inicial vive en `data/roster.json`. Para cargar el plantel real antes 
 {
 	"team": "Nombre del equipo",
 	"players": [
-		{ "id": "p-01", "number": "7", "name": "Nombre Apellido", "position": "SS" },
-		{ "id": "p-02", "number": "24", "name": "Nombre Apellido", "position": "BENCH" }
+		{ "id": "p-01", "number": "7", "name": "Nombre Apellido", "positions": ["SS", "2B"] },
+		{ "id": "p-02", "number": "24", "name": "Nombre Apellido", "positions": ["C"] }
 	]
 }
 ```
 
-Los codigos validos son `P`, `C`, `1B`, `2B`, `3B`, `SS`, `LF`, `CF`, `RF`, `SF`, `DH` y `BENCH`. La posicion del JSON es solamente el valor habitual que aparece seleccionado al preparar un partido; puede cambiarse para cada fecha.
+Los codigos validos son `P`, `C`, `1B`, `2B`, `3B`, `SS`, `LF`, `CF`, `RF`, `SF` y `DH`. Cada jugador puede tener varias posiciones habituales; aparecen primero en el selector de cada partido. Todos comienzan en `Banco` y el usuario asigna las posiciones titulares para esa fecha.
 
 El archivo se importa la primera vez que el navegador abre la aplicacion. Despues, **Editar roster** guarda cambios locales. Para volver a cargar una version nueva del JSON, exportar primero cualquier partido necesario y usar **Borrar todos los datos**.
 

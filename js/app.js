@@ -76,16 +76,23 @@ function normalizedPosition(position) {
   return Object.hasOwn(POSITIONS, code) ? code : "";
 }
 
-function positionOptions(selected = "", playerId = null, includeEmpty = false) {
+function usualPositions(player) {
+  const positions = Array.isArray(player?.positions) ? player.positions : [player?.position];
+  return positions.map(normalizedPosition).filter(Boolean);
+}
+
+function positionOptions(selected = "", playerId = null, includeEmpty = false, preferredPositions = []) {
   const used = new Map(
     [...gameDayAssignments.values()]
       .filter((assignment) => assignment.available && assignment.position && assignment.position !== "BENCH")
       .map((assignment) => [assignment.position, assignment.playerId]),
   );
-  const options = includeEmpty ? '<option value="">Sin posicion habitual</option>' : '<option value="">Selecciona posicion</option>';
-  return options + Object.entries(POSITIONS).map(([value, label]) => {
+  const selectedValues = Array.isArray(selected) ? selected : [selected];
+  const orderedPositions = [...new Set([...preferredPositions, ...Object.keys(POSITIONS)])];
+  const options = includeEmpty ? '<option value="">Sin posicion habitual</option>' : '<option value="BENCH">Banco</option>';
+  return options + orderedPositions.filter((value) => !includeEmpty || value !== "BENCH").map((value) => {
     const unavailable = value !== "BENCH" && used.has(value) && used.get(value) !== playerId;
-    return `<option value="${value}" ${value === selected ? "selected" : ""} ${unavailable ? "disabled" : ""}>${label}${unavailable ? " · ocupada" : ""}</option>`;
+    return `<option value="${value}" ${selectedValues.includes(value) ? "selected" : ""} ${unavailable ? "disabled" : ""}>${POSITIONS[value]}</option>`;
   }).join("");
 }
 
@@ -112,7 +119,7 @@ function syncGameDay(state) {
       gameDayAssignments.set(player.id, {
         playerId: player.id,
         available: true,
-        position: normalizedPosition(player.position) || "BENCH",
+        position: "BENCH",
       });
     }
   }
@@ -136,7 +143,7 @@ function renderRoster(state) {
     <div class="roster-player">
       <span class="jersey">${escapeHtml(player.number || "-")}</span>
       <strong>${escapeHtml(player.name)}</strong>
-      <span class="position">${escapeHtml(POSITIONS[normalizedPosition(player.position)] || "Sin posicion")}</span>
+      <span class="position">${escapeHtml(usualPositions(player).map((position) => POSITIONS[position]).join(", ") || "Sin posicion")}</span>
       <span class="roster-actions" ${rosterEditing ? "" : "hidden"}>
         <button class="text-button edit-player" type="button" data-id="${player.id}" aria-label="Editar a ${escapeHtml(player.name)}">Editar</button>
         <button class="text-button danger remove-player" type="button" data-id="${player.id}" aria-label="Eliminar a ${escapeHtml(player.name)}">Eliminar</button>
@@ -159,7 +166,7 @@ function renderGameSetup(state) {
       <span class="jersey">${escapeHtml(player.number || "-")}</span>
       <strong>${escapeHtml(player.name)}</strong>
       <select class="game-day-position" data-id="${player.id}" aria-label="Posicion de ${escapeHtml(player.name)}" ${assignment.available ? "" : "disabled"}>
-        ${positionOptions(assignment.position, player.id)}
+        ${positionOptions(assignment.position, player.id, false, usualPositions(player))}
       </select>
     </div>`;
   }).join("");
@@ -359,7 +366,7 @@ byId("roster-form").addEventListener("submit", (event) => {
   event.preventDefault();
   const form = new FormData(event.currentTarget);
   try {
-    const player = { number: form.get("number"), name: form.get("name"), position: form.get("position") };
+    const player = { number: form.get("number"), name: form.get("name"), positions: [...event.currentTarget.elements.positions.selectedOptions].map((option) => option.value) };
     if (editingPlayerId) {
       updatePlayer(editingPlayerId, player);
       editingPlayerId = null;
@@ -383,7 +390,7 @@ byId("roster-list").addEventListener("click", (event) => {
     const form = byId("roster-form");
     form.elements.number.value = player.number;
     form.elements.name.value = player.name;
-    form.elements.position.value = normalizedPosition(player.position);
+    [...form.elements.positions.options].forEach((option) => { option.selected = usualPositions(player).includes(option.value); });
     byId("save-player").textContent = "Guardar";
     byId("cancel-player-edit").hidden = false;
     form.elements.name.focus();
@@ -405,9 +412,7 @@ byId("game-day-roster").addEventListener("change", (event) => {
   if (!assignment) return;
   if (event.target.classList.contains("availability-toggle")) {
     assignment.available = event.target.checked;
-    if (assignment.available && !assignment.position) {
-      assignment.position = normalizedPosition(playerById(getState(), playerId).position) || "BENCH";
-    }
+    if (assignment.available && !assignment.position) assignment.position = "BENCH";
   } else if (event.target.classList.contains("game-day-position")) {
     assignment.position = event.target.value;
   }

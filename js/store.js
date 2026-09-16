@@ -115,19 +115,19 @@ export function getState() {
   return clone(state);
 }
 
-export function addPlayer({ number, name, position }) {
+export function addPlayer({ number, name, position, positions }) {
   const cleanName = name.trim();
   if (!cleanName) throw new Error("Ingresa el nombre del jugador.");
   state.roster.push({
     id: createId(),
     number: String(number).trim(),
     name: cleanName,
-    position: position.trim(),
+    positions: Array.isArray(positions) ? positions : Array.isArray(position) ? position : [position].filter(Boolean),
   });
   saveState();
 }
 
-export function updatePlayer(playerId, { number, name, position }) {
+export function updatePlayer(playerId, { number, name, position, positions }) {
   if (state.game?.active) throw new Error("No puedes modificar el roster durante un partido.");
   const player = state.roster.find((item) => item.id === playerId);
   if (!player) throw new Error("No se encontro el jugador.");
@@ -136,7 +136,7 @@ export function updatePlayer(playerId, { number, name, position }) {
   Object.assign(player, {
     number: String(number).trim(),
     name: cleanName,
-    position: position.trim(),
+    positions: Array.isArray(positions) ? positions : Array.isArray(position) ? position : [position].filter(Boolean),
   });
   saveState();
 }
@@ -153,7 +153,7 @@ export function initializeRoster(players) {
     id: player.id || createId(),
     number: String(player.number ?? "").trim(),
     name: String(player.name ?? "").trim(),
-    position: String(player.position ?? "").trim(),
+    positions: Array.isArray(player.positions) ? player.positions : [player.position].filter(Boolean),
   })).filter((player) => player.name);
   state.rosterSourceLoaded = true;
   saveState();
