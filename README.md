@@ -1,4 +1,4 @@
-# Linea Viva
+# Llaneros Virtual
 
 Aplicacion web movil para registrar la ofensiva de un equipo de softball. Guarda cada aparicion al bate y cada movimiento de corredores para poder reconstruir una entrada cuando la planilla oficial tenga errores.
 

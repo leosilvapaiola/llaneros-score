@@ -1,6 +1,6 @@
 {
-  "name": "Linea Viva - Anotador de softball",
-  "short_name": "Linea Viva",
+  "name": "Llaneros Virtual - Anotador de softball",
+  "short_name": "Llaneros Virtual",
   "description": "Registro simple de turnos y corredores para softball.",
   "start_url": "./",
   "display": "standalone",

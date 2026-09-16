@@ -68,7 +68,7 @@ export function exportFileName(state) {
     .replace(/[\u0300-\u036f]/g, "")
     .replace(/[^a-zA-Z0-9]+/g, "-")
     .replace(/^-|-$/g, "") || "Rival";
-  return `${timestamp}-vs-${opponent}-linea-viva.json`;
+  return `${timestamp}-vs-${opponent}-llaneros-virtual.json`;
 }
 
 function normalizedPosition(position) {
