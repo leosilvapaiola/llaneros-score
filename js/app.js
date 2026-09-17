@@ -81,6 +81,17 @@ function usualPositions(player) {
   return positions.map(normalizedPosition).filter(Boolean);
 }
 
+function sortRosterByNumber(roster) {
+  return [...roster].sort((firstPlayer, secondPlayer) => {
+    const firstNumber = Number.parseInt(firstPlayer.number, 10);
+    const secondNumber = Number.parseInt(secondPlayer.number, 10);
+    if (Number.isNaN(firstNumber) && Number.isNaN(secondNumber)) return firstPlayer.name.localeCompare(secondPlayer.name);
+    if (Number.isNaN(firstNumber)) return 1;
+    if (Number.isNaN(secondNumber)) return -1;
+    return firstNumber - secondNumber;
+  });
+}
+
 function positionOptions(selected = "", playerId = null, includeEmpty = false, preferredPositions = []) {
   const used = new Map(
     [...gameDayAssignments.values()]
@@ -139,7 +150,8 @@ function renderRoster(state) {
     container.innerHTML = '<p class="empty-state">El roster esta vacio.</p>';
     return;
   }
-  container.innerHTML = state.roster.map((player) => `
+  const sortedRoster = sortRosterByNumber(state.roster);
+  container.innerHTML = sortedRoster.map((player) => `
     <div class="roster-player">
       <span class="jersey">${escapeHtml(player.number || "-")}</span>
       <strong>${escapeHtml(player.name)}</strong>
@@ -156,7 +168,7 @@ function renderGameSetup(state) {
   byId("roster-count").textContent = `${state.roster.length} jugador${state.roster.length === 1 ? "" : "es"}`;
   byId("empty-roster-note").hidden = state.roster.length > 0;
   byId("game-form").hidden = state.roster.length === 0;
-  byId("game-day-roster").innerHTML = state.roster.map((player) => {
+  byId("game-day-roster").innerHTML = sortRosterByNumber(state.roster).map((player) => {
     const assignment = gameDayAssignments.get(player.id);
     return `<div class="game-day-player ${assignment.available ? "" : "absent"}">
       <label class="availability" title="Disponible para este partido">
