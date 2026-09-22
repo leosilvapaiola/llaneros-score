@@ -13,7 +13,7 @@
     { "id": "player-01-cesar-bracho", "number": "1", "name": "César Bracho", "positions": ["CF"] },
     { "id": "player-07-luis-paredes", "number": "7", "name": "Luis Paredes", "positions": ["2B","DH"] },
     { "id": "player-08-José-oliveros", "number": "8", "name": "José Oliveros", "positions": ["DH"] },
-    { "id": "player-11-alexander-gonzalez", "number": "11", "name": "Alexander Gonzalez", "positions": ["2B","3B"] },
+    { "id": "player-11-alexander-gonzalez", "number": "11", "name": "Alexander González", "positions": ["2B","3B"] },
     { "id": "player-13-José-rivas", "number": "13", "name": "José Rivas", "positions": ["SS","SF"] },
     { "id": "player-17-jolver-velasquez", "number": "17", "name": "Jolver Velásquez", "positions": ["SF","SS"] },
     { "id": "player-12-eduardo-antias", "number": "12", "name": "Eduardo Antias", "positions": ["3B","SS","2B","SF"] },
@@ -21,6 +21,7 @@
     { "id": "player-36-rodolfo-matos", "number": "36", "name": "Rodolfo Matos", "positions": ["SF","P","DH"] },
     { "id": "player-41-jesus-mendoza", "number": "41", "name": "Jesús Mendoza", "positions": ["RF","LF"] },
     { "id": "player-53-elliot-pino", "number": "53", "name": "Elliot Pino", "positions": ["3B","DH", "C"] },
-    { "id": "player-06-julio-bracho", "number": "6", "name": "Julio Bracho", "positions": ["P","1B"] }
+    { "id": "player-06-julio-bracho", "number": "6", "name": "Julio Bracho", "positions": ["P","1B"] },
+    { "id": "player-14-rommel-romero", "number": "14", "name": "Rommel Romero", "positions": ["SS","3B"] }
   ]
 }
