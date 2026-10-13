@@ -19,6 +19,8 @@ Aplicacion web movil para registrar la ofensiva de un equipo de softball. Guarda
 - Resultados preconfigurados con destinos editables para cada corredor.
 - Eventos de corredor separados del turno al bate: robo, atrapado robando, wild pitch, passed ball y avance.
 - Bitacora con bases antes y despues de cada evento.
+- Planilla de estadísticas estilo MLB (Box Score) con AB, R, H, RBI, HR, K, BB, AVG, OBP, SLG, OPS y notas de extrabases (2B, 3B, HR, HBP, SF, TB), disponible tanto en vivo como en partidos importados o finalizados.
+- Descarga de estadísticas del partido en formato CSV.
 - Deshacer exacto, incluso despues del tercer out.
 - Persistencia local, respaldo JSON e importacion.
 - Aplicacion instalable y disponible sin conexion despues de la primera visita.

@@ -1,5 +1,6 @@
 import {
   addPlayer,
+  calculateGameStats,
   currentBatter,
   endInning,
   exportData,
@@ -339,12 +340,176 @@ function renderLog(state) {
     byId("log-list").innerHTML = '<p class="empty-state">Las jugadas apareceran aqui.</p>';
     return;
   }
-  byId("log-list").innerHTML = [...events].reverse().map((event) => `
+  byId("log-list").innerHTML = [...events].reverse().map((event) => {
+    const beforeInning = event.before?.inning ?? 1;
+    const beforeOuts = event.before?.outs ?? 0;
+    const beforeBases = event.before?.bases ?? { first: null, second: null, third: null };
+    const afterBases = event.after?.bases ?? { first: null, second: null, third: null };
+
+    return `
     <article class="log-event ${event.kind === "runner-event" || event.kind === "substitution" ? "runner" : ""}">
-      <span class="log-inning">Entrada ${event.before.inning}<br>${event.before.outs} out${event.before.outs === 1 ? "" : "s"}</span>
-      <div><strong>${event.kind === "substitution" ? `${escapeHtml(event.incomingPlayerName)} entra por ${escapeHtml(event.outgoingPlayerName)}` : `${escapeHtml(event.playerName)} · ${escapeHtml(RESULTS[event.label] ?? event.label)}`}</strong><small>${event.kind === "substitution" ? `Lugar ${event.slotIndex + 1} · ${escapeHtml(POSITIONS[event.position] || event.position)}` : `${escapeHtml(describeBases(event.before.bases, state))} → ${escapeHtml(describeBases(event.after.bases, state))}${event.endedInning ? " · Fin de entrada" : ""}`}</small></div>
+      <span class="log-inning">Entrada ${beforeInning}<br>${beforeOuts} out${beforeOuts === 1 ? "" : "s"}</span>
+      <div><strong>${event.kind === "substitution" ? `${escapeHtml(event.incomingPlayerName)} entra por ${escapeHtml(event.outgoingPlayerName)}` : `${escapeHtml(event.playerName)} · ${escapeHtml(RESULTS[event.label] ?? event.label)}`}</strong><small>${event.kind === "substitution" ? `Lugar ${event.slotIndex + 1} · ${escapeHtml(POSITIONS[event.position] || event.position)}` : `${escapeHtml(describeBases(beforeBases, state))} → ${escapeHtml(describeBases(afterBases, state))}${event.endedInning ? " · Fin de entrada" : ""}`}</small></div>
       <span class="log-score">${event.kind === "substitution" ? "Cambio" : event.runsAdded ? `+${event.runsAdded} carrera${event.runsAdded === 1 ? "" : "s"}` : `${event.outsAdded || 0} outs`}</span>
-    </article>`).join("");
+    </article>`;
+  }).join("");
+}
+
+function renderStats(state) {
+  const game = state.game;
+  const statsEmpty = byId("stats-empty");
+  const statsContent = byId("stats-content");
+  const statsBadge = byId("stats-game-badge");
+  const exportBtn = byId("btn-export-stats-csv");
+
+  if (!game) {
+    statsEmpty.hidden = false;
+    statsEmpty.textContent = "No hay datos de partido activos ni importados.";
+    statsContent.hidden = true;
+    statsBadge.textContent = "Sin partido";
+    if (exportBtn) exportBtn.disabled = true;
+    return;
+  }
+
+  const stats = calculateGameStats(game, state.roster);
+  if (!stats) {
+    statsEmpty.hidden = false;
+    statsContent.hidden = true;
+    statsBadge.textContent = "Sin datos";
+    if (exportBtn) exportBtn.disabled = true;
+    return;
+  }
+
+  statsEmpty.hidden = true;
+  statsContent.hidden = false;
+  if (exportBtn) exportBtn.disabled = false;
+
+  const statusText = stats.isActive ? `En vivo · Entr. ${stats.inning}` : "Finalizado";
+  statsBadge.textContent = statusText;
+  byId("stats-matchup-title").textContent = `Ofensiva vs. ${escapeHtml(stats.opponent)}`;
+  byId("stats-game-meta").textContent = `${stats.date || "Fecha no especificada"} · Carreras: ${stats.runs}`;
+
+  // Build table rows
+  const tbody = byId("stats-table-body");
+  if (!stats.players.length) {
+    tbody.innerHTML = '<tr><td colspan="12" class="empty-state">No hay turnos registrados en este partido aún.</td></tr>';
+  } else {
+    tbody.innerHTML = stats.players.map((p) => {
+      const isSub = !p.isStarter && p.lineupSlotIndex !== null;
+      const posDisplay = p.positionsLabel ? `(${escapeHtml(p.positionsLabel)})` : "";
+      const jerseyDisplay = p.number ? `#${escapeHtml(p.number)} ` : "";
+      const nameClass = isSub ? "substitute-indent" : "";
+
+      return `<tr>
+        <td class="col-player ${nameClass}">
+          <div class="player-cell-content">
+            <span class="player-name-link">${jerseyDisplay}${escapeHtml(p.name)}</span>
+            <span class="player-pos-tag">${posDisplay}</span>
+          </div>
+        </td>
+        <td class="stat-highlight">${p.ab}</td>
+        <td>${p.r}</td>
+        <td class="stat-highlight">${p.h}</td>
+        <td>${p.rbi}</td>
+        <td>${p.hr}</td>
+        <td>${p.k}</td>
+        <td>${p.bb}</td>
+        <td class="stat-rate">${p.avg}</td>
+        <td class="stat-rate">${p.obp}</td>
+        <td class="stat-rate">${p.slg}</td>
+        <td class="stat-rate stat-highlight">${p.ops}</td>
+      </tr>`;
+    }).join("");
+  }
+
+  // Table footer totals
+  const tfoot = byId("stats-table-foot");
+  const tot = stats.totals;
+  tfoot.innerHTML = `<tr>
+    <td class="col-player"><strong>Total</strong></td>
+    <td class="stat-highlight">${tot.ab}</td>
+    <td>${tot.r}</td>
+    <td class="stat-highlight">${tot.h}</td>
+    <td>${tot.rbi}</td>
+    <td>${tot.hr}</td>
+    <td>${tot.k}</td>
+    <td>${tot.bb}</td>
+    <td class="stat-rate">${tot.avg}</td>
+    <td class="stat-rate">${tot.obp}</td>
+    <td class="stat-rate">${tot.slg}</td>
+    <td class="stat-rate stat-highlight">${tot.ops}</td>
+  </tr>`;
+
+  // Game Extra-Base Hits & Events Notes
+  const notesContainer = byId("stats-game-notes");
+  const doublesPlayers = stats.players.filter((p) => p.doubles > 0).map((p) => `${p.name} (${p.doubles})`);
+  const triplesPlayers = stats.players.filter((p) => p.triples > 0).map((p) => `${p.name} (${p.triples})`);
+  const hrPlayers = stats.players.filter((p) => p.hr > 0).map((p) => `${p.name} (${p.hr})`);
+  const hbpPlayers = stats.players.filter((p) => p.hbp > 0).map((p) => `${p.name} (${p.hbp})`);
+  const sfPlayers = stats.players.filter((p) => p.sf > 0).map((p) => `${p.name} (${p.sf})`);
+
+  const notesHtml = [];
+  if (doublesPlayers.length) notesHtml.push(`<div><strong>2B:</strong> ${escapeHtml(doublesPlayers.join(", "))}</div>`);
+  if (triplesPlayers.length) notesHtml.push(`<div><strong>3B:</strong> ${escapeHtml(triplesPlayers.join(", "))}</div>`);
+  if (hrPlayers.length) notesHtml.push(`<div><strong>HR:</strong> ${escapeHtml(hrPlayers.join(", "))}</div>`);
+  if (hbpPlayers.length) notesHtml.push(`<div><strong>HBP:</strong> ${escapeHtml(hbpPlayers.join(", "))}</div>`);
+  if (sfPlayers.length) notesHtml.push(`<div><strong>SF:</strong> ${escapeHtml(sfPlayers.join(", "))}</div>`);
+  notesHtml.push(`<div><strong>Total Bases (TB):</strong> ${tot.tb}</div>`);
+
+  notesContainer.innerHTML = notesHtml.join("");
+}
+
+function exportStatsCsv(state) {
+  const game = state.game;
+  if (!game) return;
+  const stats = calculateGameStats(game, state.roster);
+  if (!stats) return;
+
+  const headers = ["Player", "Number", "Position", "AB", "R", "H", "RBI", "HR", "K", "BB", "AVG", "OBP", "SLG", "OPS"];
+  const rows = stats.players.map((p) => [
+    `"${p.name.replace(/"/g, '""')}"`,
+    `"${p.number}"`,
+    `"${p.positionsLabel}"`,
+    p.ab,
+    p.r,
+    p.h,
+    p.rbi,
+    p.hr,
+    p.k,
+    p.bb,
+    p.avg,
+    p.obp,
+    p.slg,
+    p.ops,
+  ]);
+  const tot = stats.totals;
+  rows.push([
+    '"TOTAL"',
+    '""',
+    '""',
+    tot.ab,
+    tot.r,
+    tot.h,
+    tot.rbi,
+    tot.hr,
+    tot.k,
+    tot.bb,
+    tot.avg,
+    tot.obp,
+    tot.slg,
+    tot.ops,
+  ]);
+
+  const csvContent = [headers.join(","), ...rows.map((r) => r.join(","))].join("\n");
+  const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
+  const link = document.createElement("a");
+  link.href = URL.createObjectURL(blob);
+  const safeOpponent = (stats.opponent || "Rival").replace(/[^a-zA-Z0-9]+/g, "-");
+  link.download = `stats-vs-${safeOpponent}-${stats.date || "game"}.csv`;
+  document.body.append(link);
+  link.click();
+  link.remove();
+  setTimeout(() => URL.revokeObjectURL(link.href), 1000);
 }
 
 function render() {
@@ -356,6 +521,7 @@ function render() {
   renderGameSetup(state);
   renderLiveLineup(state);
   renderLog(state);
+  renderStats(state);
   if (live) renderLiveGame(state);
   byId("save-status").textContent = "Guardado local";
 }
@@ -523,9 +689,14 @@ finishDialog.addEventListener("close", () => {
 byId("confirm-finish").addEventListener("click", () => {
   finishGame();
   finishDialog.close();
-  switchTab("log");
+  switchTab("stats");
   notify("Partido finalizado");
 });
+
+const csvBtn = byId("btn-export-stats-csv");
+if (csvBtn) {
+  csvBtn.addEventListener("click", () => exportStatsCsv(getState()));
+}
 
 byId("export-data").addEventListener("click", () => {
   const blob = new Blob([exportData()], { type: "application/json" });

@@ -184,3 +184,163 @@ select[multiple] { min-height: 120px; }
   .movement { grid-template-columns: 1fr 125px; }
   .game-actions { flex-direction: column; }
 }
+
+/* =========================================================
+   MLB Box Score & Batting Stats Table
+   ========================================================= */
+.stats-header-actions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.stats-export-btn {
+  min-height: 34px;
+  padding: 6px 14px;
+  font-size: 13px;
+}
+.boxscore-card {
+  background: white;
+  border: 1px solid var(--line);
+  box-shadow: var(--shadow);
+  border-radius: 6px;
+  overflow: hidden;
+  margin-bottom: 24px;
+}
+.boxscore-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 16px 20px;
+  background: var(--field-dark);
+  color: white;
+}
+.boxscore-matchup {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.matchup-tag {
+  background: var(--clay);
+  color: white;
+  font-size: 10px;
+  font-weight: 800;
+  text-transform: uppercase;
+  padding: 3px 8px;
+  border-radius: 3px;
+  letter-spacing: 0.5px;
+}
+.boxscore-matchup strong {
+  font: 700 18px Georgia, serif;
+}
+.boxscore-meta {
+  color: #bad1c6;
+  font-size: 13px;
+  font-weight: 600;
+}
+.stats-table-wrapper {
+  width: 100%;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+}
+.mlb-stats-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 14px;
+  text-align: right;
+  white-space: nowrap;
+}
+.mlb-stats-table thead tr {
+  background: #f4f6f5;
+  border-bottom: 2px solid var(--line);
+}
+.mlb-stats-table th {
+  padding: 12px 14px;
+  font-size: 11px;
+  font-weight: 800;
+  color: var(--muted);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+.mlb-stats-table td {
+  padding: 12px 14px;
+  border-bottom: 1px solid #edf0ed;
+  color: var(--ink);
+  font-variant-numeric: tabular-nums;
+}
+.mlb-stats-table tbody tr:hover {
+  background: #f9faf9;
+}
+.mlb-stats-table .col-player {
+  text-align: left;
+  position: sticky;
+  left: 0;
+  background: white;
+  z-index: 2;
+  box-shadow: 2px 0 5px rgba(0,0,0,0.03);
+}
+.mlb-stats-table thead .col-player {
+  background: #f4f6f5;
+  z-index: 3;
+}
+.mlb-stats-table tfoot .col-player {
+  background: #f4f6f5;
+  z-index: 3;
+}
+.player-cell-content {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.player-name-link {
+  font-weight: 700;
+  color: var(--ink);
+}
+.player-pos-tag {
+  color: var(--muted);
+  font-size: 12px;
+  font-weight: 600;
+}
+.substitute-indent {
+  padding-left: 20px;
+  position: relative;
+}
+.substitute-indent::before {
+  content: "↳";
+  position: absolute;
+  left: 6px;
+  color: var(--muted);
+  font-size: 12px;
+}
+.stat-highlight {
+  font-weight: 800;
+  color: var(--field-dark);
+}
+.stat-rate {
+  color: var(--muted);
+  font-size: 13px;
+}
+.mlb-stats-table tfoot tr {
+  background: #f4f6f5;
+  border-top: 2px solid var(--line);
+  font-weight: 800;
+}
+.mlb-stats-table tfoot td {
+  border-bottom: none;
+  padding: 14px;
+  color: var(--ink);
+}
+.boxscore-notes {
+  padding: 16px 20px;
+  background: #fafbfa;
+  border-top: 1px solid var(--line);
+  font-size: 13px;
+  line-height: 1.6;
+  color: var(--muted);
+}
+.boxscore-notes div + div {
+  margin-top: 6px;
+}
+.boxscore-notes strong {
+  color: var(--ink);
+  margin-right: 6px;
+}

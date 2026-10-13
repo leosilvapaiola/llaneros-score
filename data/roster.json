@@ -22,6 +22,7 @@
     { "id": "player-41-jesus-mendoza", "number": "41", "name": "Jesús Mendoza", "positions": ["RF","LF"] },
     { "id": "player-53-elliot-pino", "number": "53", "name": "Elliot Pino", "positions": ["3B","DH", "C"] },
     { "id": "player-06-julio-bracho", "number": "6", "name": "Julio Bracho", "positions": ["P","1B"] },
-    { "id": "player-14-rommel-romero", "number": "14", "name": "Rommel Romero", "positions": ["SS","3B"] }
+    { "id": "player-14-rommel-romero", "number": "14", "name": "Rommel Romero", "positions": ["SS","3B"] },
+    { "id": "player-25-jose-hernandez", "number": "25", "name": "José M. Hernández", "positions": ["RF","2B","SF"] }
   ]
 }

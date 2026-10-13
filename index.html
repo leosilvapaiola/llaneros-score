@@ -21,6 +21,7 @@
 
   <nav class="tabs" aria-label="Secciones">
     <button class="tab active" data-tab="game">Partido</button>
+    <button class="tab" data-tab="stats">Estadísticas</button>
     <button class="tab" data-tab="lineup">Line-up</button>
     <button class="tab" data-tab="roster">Roster</button>
     <button class="tab" data-tab="log">Bitacora</button>
@@ -88,6 +89,64 @@
           <button id="end-inning" class="secondary" type="button">Cerrar entrada</button>
         </div>
       </div>
+    </section>
+
+    <section id="stats" class="view" aria-labelledby="stats-title">
+      <div class="section-heading">
+        <div>
+          <p class="eyebrow">Planilla de bateo</p>
+          <h1 id="stats-title">Estadísticas</h1>
+        </div>
+        <div class="stats-header-actions">
+          <span id="stats-game-badge" class="count-badge">Sin partido</span>
+          <button id="btn-export-stats-csv" class="secondary stats-export-btn" type="button">Descargar CSV</button>
+        </div>
+      </div>
+
+      <div id="stats-content">
+        <div class="boxscore-card">
+          <div class="boxscore-header">
+            <div class="boxscore-matchup">
+              <span class="matchup-tag">Ofensiva</span>
+              <strong id="stats-matchup-title">Llaneros vs. Rival</strong>
+            </div>
+            <div id="stats-game-meta" class="boxscore-meta">-</div>
+          </div>
+
+          <div class="stats-table-wrapper">
+            <table class="mlb-stats-table" aria-label="Estadísticas de bateo">
+              <thead>
+                <tr class="table-group-header">
+                  <th class="col-player" scope="col">Bateo</th>
+                  <th scope="col" title="Turnos al bate">AB</th>
+                  <th scope="col" title="Carreras anotadas">R</th>
+                  <th scope="col" title="Hits conectados">H</th>
+                  <th scope="col" title="Carreras impulsadas">RBI</th>
+                  <th scope="col" title="Jonrones">HR</th>
+                  <th scope="col" title="Ponches">K</th>
+                  <th scope="col" title="Bases por bolas">BB</th>
+                  <th scope="col" title="Promedio de bateo">AVG</th>
+                  <th scope="col" title="Porcentaje de embasado">OBP</th>
+                  <th scope="col" title="Slugging">SLG</th>
+                  <th scope="col" title="OPS (OBP + SLG)">OPS</th>
+                </tr>
+              </thead>
+              <tbody id="stats-table-body">
+                <!-- Injected via JavaScript -->
+              </tbody>
+              <tfoot id="stats-table-foot">
+                <!-- Totals Injected via JavaScript -->
+              </tfoot>
+            </table>
+          </div>
+
+          <div id="stats-game-notes" class="boxscore-notes">
+            <!-- Summary notes (e.g. 2B, 3B, HR, HBP, SF) -->
+          </div>
+        </div>
+      </div>
+
+      <p id="stats-empty" class="empty-state" hidden>No hay datos de partido activos ni importados.</p>
     </section>
 
     <section id="lineup" class="view" aria-labelledby="lineup-title">

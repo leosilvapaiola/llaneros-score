@@ -319,6 +319,237 @@ export function undoLastEvent() {
   return true;
 }
 
+export function calculateGameStats(gameState = state.game, roster = state.roster) {
+  if (!gameState) return null;
+  ensureLineupModel(gameState);
+
+  const playersMap = new Map(roster.map((p) => [p.id, p]));
+
+  // Track player stats: key = playerId
+  const statsMap = new Map();
+
+  function getPlayerEntry(playerId, fallbackName = "") {
+    if (!statsMap.has(playerId)) {
+      const p = playersMap.get(playerId);
+      statsMap.set(playerId, {
+        id: playerId,
+        number: p?.number || "",
+        name: p?.name || fallbackName || "Desconocido",
+        positions: [],
+        firstAppearanceOrder: Infinity,
+        lineupSlotIndex: null,
+        isStarter: false,
+        ab: 0,
+        r: 0,
+        h: 0,
+        rbi: 0,
+        hr: 0,
+        k: 0,
+        bb: 0,
+        hbp: 0,
+        sf: 0,
+        singles: 0,
+        doubles: 0,
+        triples: 0,
+        tb: 0,
+        obp: 0,
+        slg: 0,
+        ops: 0,
+        avg: 0,
+      });
+    }
+    return statsMap.get(playerId);
+  }
+
+  // Pre-seed from lineupSlots and gameDay if available
+  if (Array.isArray(gameState.lineupSlots)) {
+    gameState.lineupSlots.forEach((slot, idx) => {
+      if (slot.starterPlayerId) {
+        const entry = getPlayerEntry(slot.starterPlayerId);
+        entry.lineupSlotIndex = idx;
+        entry.isStarter = true;
+        if (slot.position && !entry.positions.includes(slot.position)) {
+          entry.positions.push(slot.position);
+        }
+      }
+      if (slot.currentPlayerId && slot.currentPlayerId !== slot.starterPlayerId) {
+        const entry = getPlayerEntry(slot.currentPlayerId);
+        if (entry.lineupSlotIndex === null) entry.lineupSlotIndex = idx;
+        if (slot.position && !entry.positions.includes(slot.position)) {
+          entry.positions.push(slot.position);
+        }
+      }
+    });
+  }
+
+  const events = gameState.events || [];
+  let orderCounter = 0;
+
+  for (const event of events) {
+    if (event.kind === "substitution") {
+      const inc = getPlayerEntry(event.incomingPlayerId, event.incomingPlayerName);
+      if (inc.lineupSlotIndex === null && event.slotIndex !== undefined) {
+        inc.lineupSlotIndex = event.slotIndex;
+      }
+      if (event.position && !inc.positions.includes(event.position)) {
+        inc.positions.push(event.position);
+      }
+      continue;
+    }
+
+    if (event.kind === "plate-appearance") {
+      const batter = getPlayerEntry(event.playerId, event.playerName);
+      if (batter.firstAppearanceOrder === Infinity) {
+        batter.firstAppearanceOrder = orderCounter++;
+      }
+
+      const res = event.label;
+      const isSingle = res === "1B";
+      const isDouble = res === "2B";
+      const isTriple = res === "3B";
+      const isHR = res === "HR";
+      const isHit = isSingle || isDouble || isTriple || isHR;
+      const isWalk = res === "BB";
+      const isHBP = res === "HBP";
+      const isSF = res === "SF";
+      const isK = res === "K";
+
+      if (isHit) {
+        batter.h += 1;
+        if (isSingle) { batter.singles += 1; batter.tb += 1; }
+        else if (isDouble) { batter.doubles += 1; batter.tb += 2; }
+        else if (isTriple) { batter.triples += 1; batter.tb += 3; }
+        else if (isHR) { batter.hr += 1; batter.tb += 4; }
+      }
+
+      if (isWalk) batter.bb += 1;
+      if (isHBP) batter.hbp += 1;
+      if (isSF) batter.sf += 1;
+      if (isK) batter.k += 1;
+
+      // At Bat (AB): all PA except BB, HBP, SF
+      if (!isWalk && !isHBP && !isSF) {
+        batter.ab += 1;
+      }
+
+      // Count runs scored on this plate appearance
+      // Movements to 'home' count as runs for those runners
+      if (Array.isArray(event.movements)) {
+        let runsScoredOnPlay = 0;
+        for (const mov of event.movements) {
+          if (mov.to === "home" && mov.playerId) {
+            const runner = getPlayerEntry(mov.playerId);
+            runner.r += 1;
+            runsScoredOnPlay += 1;
+          }
+        }
+        // RBI: In baseball/softball, runners scoring on hits, walks with bases loaded, SF, and groundouts drive in runs (except double plays or errors if strict, but in softball/scorekeeping apps all scoring movements on PA credit RBI to batter)
+        // Except when run scored on error/DP, but standard scorekeeping credits RBI for hits/SF/groundout/bases-loaded BB.
+        // If it's a DP, RBI is usually 0. Otherwise runs scored on PA count as RBI for batter.
+        if (res !== "DP") {
+          batter.rbi += runsScoredOnPlay;
+        }
+      }
+    } else if (event.kind === "runner-event") {
+      // Runner events (steal to home, wild pitch, advance to home, etc.)
+      if (Array.isArray(event.movements)) {
+        for (const mov of event.movements) {
+          if (mov.to === "home" && mov.playerId) {
+            const runner = getPlayerEntry(mov.playerId, event.playerName);
+            runner.r += 1;
+            // Runner event runs do NOT count as RBI for a batter
+          }
+        }
+      }
+    }
+  }
+
+  // Calculate totals and averages
+  const totals = {
+    ab: 0,
+    r: 0,
+    h: 0,
+    rbi: 0,
+    hr: 0,
+    k: 0,
+    bb: 0,
+    hbp: 0,
+    sf: 0,
+    tb: 0,
+    avg: ".000",
+    obp: ".000",
+    slg: ".000",
+    ops: ".000",
+  };
+
+  const playersList = Array.from(statsMap.values()).map((p) => {
+    totals.ab += p.ab;
+    totals.r += p.r;
+    totals.h += p.h;
+    totals.rbi += p.rbi;
+    totals.hr += p.hr;
+    totals.k += p.k;
+    totals.bb += p.bb;
+    totals.hbp += p.hbp;
+    totals.sf += p.sf;
+    totals.tb += p.tb;
+
+    const avgVal = p.ab > 0 ? p.h / p.ab : 0;
+    const obpDenom = p.ab + p.bb + p.hbp + p.sf;
+    const obpVal = obpDenom > 0 ? (p.h + p.bb + p.hbp) / obpDenom : 0;
+    const slgVal = p.ab > 0 ? p.tb / p.ab : 0;
+    const opsVal = obpVal + slgVal;
+
+    const formatRate = (val) => {
+      if (val >= 1) return val.toFixed(3);
+      return val.toFixed(3).replace(/^0\./, ".");
+    };
+
+    return {
+      ...p,
+      avg: formatRate(avgVal),
+      obp: formatRate(obpVal),
+      slg: formatRate(slgVal),
+      ops: formatRate(opsVal),
+      positionsLabel: p.positions.length ? p.positions.join("/") : "",
+    };
+  });
+
+  // Sort players: starters first by lineup slot index (or appearance), then substitutes
+  playersList.sort((a, b) => {
+    const slotA = a.lineupSlotIndex !== null ? a.lineupSlotIndex : 999;
+    const slotB = b.lineupSlotIndex !== null ? b.lineupSlotIndex : 999;
+    if (slotA !== slotB) return slotA - slotB;
+    if (a.isStarter !== b.isStarter) return a.isStarter ? -1 : 1;
+    return a.firstAppearanceOrder - b.firstAppearanceOrder;
+  });
+
+  // Calculate team rates
+  const teamAvg = totals.ab > 0 ? totals.h / totals.ab : 0;
+  const teamObpDenom = totals.ab + totals.bb + totals.hbp + totals.sf;
+  const teamObp = teamObpDenom > 0 ? (totals.h + totals.bb + totals.hbp) / teamObpDenom : 0;
+  const teamSlg = totals.ab > 0 ? totals.tb / totals.ab : 0;
+  const formatRate = (val) => {
+    if (val >= 1) return val.toFixed(3);
+    return val.toFixed(3).replace(/^0\./, ".");
+  };
+  totals.avg = formatRate(teamAvg);
+  totals.obp = formatRate(teamObp);
+  totals.slg = formatRate(teamSlg);
+  totals.ops = formatRate(teamObp + teamSlg);
+
+  return {
+    players: playersList,
+    totals,
+    opponent: gameState.opponent || "Rival",
+    date: gameState.date || "",
+    inning: gameState.inning || 1,
+    outs: gameState.outs || 0,
+    runs: gameState.runs || totals.r,
+    isActive: Boolean(gameState.active),
+  };
+}
+
 export function finishGame() {
   if (!state.game) return;
   state.game.active = false;
