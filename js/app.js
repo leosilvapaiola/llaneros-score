@@ -757,4 +757,8 @@ async function loadDefaultRoster() {
 
 loadDefaultRoster();
 
-if ("serviceWorker" in navigator) navigator.serviceWorker.register("./service-worker.js");
+if ("serviceWorker" in navigator) {
+  navigator.serviceWorker.register("./service-worker.js").then((reg) => {
+    reg.update();
+  });
+}
