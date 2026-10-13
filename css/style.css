@@ -344,3 +344,96 @@ select[multiple] { min-height: 120px; }
   color: var(--ink);
   margin-right: 6px;
 }
+
+/* =========================================================
+   Print Styles for PDF Export
+   ========================================================= */
+@media print {
+  @page {
+    size: landscape;
+    margin: 10mm;
+  }
+
+  body {
+    background: white !important;
+    color: black !important;
+    font-size: 11pt;
+  }
+
+  /* Hide app header, tabs, buttons, dialogs, toasts, other views */
+  .app-header,
+  .tabs,
+  .stats-header-actions,
+  #toast,
+  dialog,
+  #game,
+  #lineup,
+  #roster,
+  #log,
+  #data {
+    display: none !important;
+  }
+
+  main {
+    width: 100% !important;
+    margin: 0 !important;
+    padding: 0 !important;
+  }
+
+  #stats {
+    display: block !important;
+    width: 100% !important;
+  }
+
+  .section-heading {
+    margin-bottom: 12px;
+  }
+
+  .boxscore-card {
+    box-shadow: none !important;
+    border: 1px solid #777 !important;
+    border-radius: 0 !important;
+  }
+
+  .boxscore-header {
+    background: #17211d !important;
+    color: white !important;
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+    padding: 10px 14px !important;
+  }
+
+  .boxscore-matchup strong {
+    font-size: 16pt;
+  }
+
+  .mlb-stats-table {
+    font-size: 10pt;
+  }
+
+  .mlb-stats-table th,
+  .mlb-stats-table td {
+    padding: 6px 8px !important;
+  }
+
+  .mlb-stats-table thead tr,
+  .mlb-stats-table tfoot tr {
+    background: #f0f0f0 !important;
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
+
+  .mlb-stats-table .col-player {
+    position: static !important;
+    box-shadow: none !important;
+    background: transparent !important;
+  }
+
+  .boxscore-notes {
+    font-size: 9.5pt;
+    padding: 10px 14px;
+    background: #fafafa !important;
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
+}

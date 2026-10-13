@@ -361,6 +361,7 @@ function renderStats(state) {
   const statsContent = byId("stats-content");
   const statsBadge = byId("stats-game-badge");
   const exportBtn = byId("btn-export-stats-csv");
+  const printPdfBtn = byId("btn-print-stats-pdf");
 
   if (!game) {
     statsEmpty.hidden = false;
@@ -368,6 +369,7 @@ function renderStats(state) {
     statsContent.hidden = true;
     statsBadge.textContent = "Sin partido";
     if (exportBtn) exportBtn.disabled = true;
+    if (printPdfBtn) printPdfBtn.disabled = true;
     return;
   }
 
@@ -377,12 +379,14 @@ function renderStats(state) {
     statsContent.hidden = true;
     statsBadge.textContent = "Sin datos";
     if (exportBtn) exportBtn.disabled = true;
+    if (printPdfBtn) printPdfBtn.disabled = true;
     return;
   }
 
   statsEmpty.hidden = true;
   statsContent.hidden = false;
   if (exportBtn) exportBtn.disabled = false;
+  if (printPdfBtn) printPdfBtn.disabled = false;
 
   const statusText = stats.isActive ? `En vivo · Entr. ${stats.inning}` : "Finalizado";
   statsBadge.textContent = statusText;
@@ -696,6 +700,14 @@ byId("confirm-finish").addEventListener("click", () => {
 const csvBtn = byId("btn-export-stats-csv");
 if (csvBtn) {
   csvBtn.addEventListener("click", () => exportStatsCsv(getState()));
+}
+
+const printPdfBtn = byId("btn-print-stats-pdf");
+if (printPdfBtn) {
+  printPdfBtn.addEventListener("click", () => {
+    switchTab("stats");
+    window.print();
+  });
 }
 
 byId("export-data").addEventListener("click", () => {
