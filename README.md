@@ -18,9 +18,11 @@ Aplicacion web movil para registrar la ofensiva de un equipo de softball. Guarda
 - Diamante interactivo con corredores en base.
 - Resultados preconfigurados con destinos editables para cada corredor.
 - Eventos de corredor separados del turno al bate: robo, atrapado robando, wild pitch, passed ball y avance.
+- Corredor emergente desde cualquier base ocupada, con las mismas reglas de sustitucion y reingreso del lineup.
 - Bitacora con bases antes y despues de cada evento.
 - Planilla de estadísticas estilo MLB (Box Score) con AB, R, H, RBI, HR, K, BB, AVG, OBP, SLG, OPS y notas de extrabases (2B, 3B, HR, HBP, SF, TB), disponible tanto en vivo como en partidos importados o finalizados.
 - Descarga de estadísticas del partido en formato CSV.
+- Edicion por jugador de estadisticas de partidos importados y descarga del JSON corregido; totales y promedios se recalculan automaticamente.
 - Deshacer exacto, incluso despues del tercer out.
 - Persistencia local, respaldo JSON e importacion.
 - Aplicacion instalable y disponible sin conexion despues de la primera visita.
@@ -53,6 +55,24 @@ Abrir `http://localhost:8080`.
 ### Regla de reingreso
 
 Cada lugar del orden al bate conserva al titular original. Cuando entra un jugador del banco, ocupa ese mismo lugar y sus apariciones se guardan a su nombre. El titular sustituido queda en el banco y puede reingresar solamente en su lugar original. Si el titular reingresa o entra otro jugador, el sustituto saliente queda marcado como no disponible y no puede volver al juego.
+
+### Corredor emergente
+
+Tocar una base ocupada, seleccionar un jugador disponible en **Corredor emergente** y confirmar **Sustituir corredor**. El entrante queda en esa base y hereda el lugar del corredor en el orden al bate y su posicion defensiva. No es un corredor de cortesia: es una sustitucion completa. Las carreras posteriores se acreditan al entrante; los hits y turnos previos siguen perteneciendo al saliente. **Deshacer ultima** restaura la base y ambos jugadores. Una sustitucion desde **Line-up** tambien reemplaza al jugador si esta en base.
+
+### Corregir un JSON importado
+
+En **Datos**, importar el respaldo y abrir **Estadisticas**. Los partidos importados se abren como registros de consulta, sin registro de jugadas en vivo, incluso si el respaldo se descargo antes de finalizar. Pulsar **Editar** junto al jugador, ajustar AB, R, RBI, K, BB, HBP, SF, sencillos, dobles, triples y HR, y guardar. H y TB se derivan de los hits; AVG, OBP, SLG, OPS y los totales se recalculan. **Cancelar** descarta los cambios del formulario.
+
+Usar **Descargar JSON** en Estadisticas o **Descargar respaldo JSON** en Datos para guardar el archivo corregido. Las correcciones viven en `game.statCorrections` y se aplican tambien al CSV y a la impresion; la Bitacora original no se modifica. Las correcciones sobreviven a la recarga del navegador y a una nueva importacion. Los partidos iniciados en la aplicacion, activos o finalizados, no ofrecen este editor hasta que se exportan y se importan como JSON.
+
+### Pruebas
+
+Las pruebas de las reglas y correcciones no requieren paquetes externos. Con Node.js instalado:
+
+```bash
+node --test tests/store.test.mjs
+```
 
 ## Roster precargado
 

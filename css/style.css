@@ -135,6 +135,10 @@ select[multiple] { min-height: 120px; }
 .confirm-dialog h2 { margin: 4px 0 10px; font: 700 28px Georgia, serif; }
 .confirm-dialog p:not(.eyebrow) { color: var(--muted); line-height: 1.5; }
 .dialog-actions { display: flex; justify-content: flex-end; gap: 10px; margin-top: 20px; }
+.stats-edit-fields { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; }
+.stats-edit-fields input { min-width: 0; }
+.confirm-dialog .stats-edit-error { color: #a32424; }
+.edit-player-stats { padding: 4px 8px; }
 .danger-fill { border-color: #9b382d; background: #9b382d; }
 .danger-fill:hover { background: #7e2c24; }
 

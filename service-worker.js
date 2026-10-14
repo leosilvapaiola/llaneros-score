@@ -1,4 +1,4 @@
-const CACHE_NAME = "llaneros-virtual-v8";
+const CACHE_NAME = "llaneros-virtual-v9";
 const APP_FILES = [
   "./",
   "./index.html",

@@ -75,6 +75,8 @@
             <label>Jugada<select id="runner-event-label"><option>Robo de base</option><option>Atrapado robando</option><option>Wild pitch</option><option>Passed ball</option><option>Avance</option></select></label>
             <label>Destino<select id="runner-destination"></select></label>
             <div class="button-row"><button id="record-runner" class="secondary" type="button">Registrar</button><button id="cancel-runner" class="text-button" type="button">Cancelar</button></div>
+            <label>Corredor emergente<select id="pinch-runner-player"></select></label>
+            <button id="substitute-runner" class="secondary" type="button" disabled>Sustituir corredor</button>
           </aside>
         </div>
 
@@ -99,6 +101,7 @@
         </div>
         <div class="stats-header-actions">
           <span id="stats-game-badge" class="count-badge">Sin partido</span>
+          <button id="btn-export-stats-json" class="secondary stats-export-btn" type="button" hidden>Descargar JSON</button>
           <button id="btn-print-stats-pdf" class="secondary stats-export-btn" type="button">📄 Imprimir PDF</button>
           <button id="btn-export-stats-csv" class="secondary stats-export-btn" type="button">📊 Descargar CSV</button>
         </div>
@@ -195,6 +198,16 @@
       <p class="storage-note">Los datos quedan en este navegador. Descarga un respaldo al terminar cada partido.</p>
     </section>
   </main>
+
+  <dialog id="stats-edit-dialog" class="confirm-dialog" aria-labelledby="stats-edit-title">
+    <form id="stats-edit-form">
+      <p class="eyebrow">Editar estadisticas</p>
+      <h2 id="stats-edit-title"></h2>
+      <div id="stats-edit-fields" class="stats-edit-fields"></div>
+      <p id="stats-edit-error" class="stats-edit-error" role="alert"></p>
+      <div class="dialog-actions"><button id="cancel-stats-edit" class="secondary" type="button">Cancelar</button><button class="primary" type="submit">Guardar</button></div>
+    </form>
+  </dialog>
 
   <dialog id="finish-dialog" class="confirm-dialog">
     <div id="finish-step-one">

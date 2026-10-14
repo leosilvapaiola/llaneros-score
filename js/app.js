@@ -14,8 +14,10 @@ import {
   resetAll,
   startGame,
   substitutePlayer,
+  substituteRunner,
   undoLastEvent,
   updatePlayer,
+  updateImportedStats,
 } from "./store.js";
 
 const RESULTS = {
@@ -56,6 +58,8 @@ let gameDayAssignments = new Map();
 let selectedBase = null;
 let rosterEditing = false;
 let editingPlayerId = null;
+let editingStatsPlayerId = null;
+const STAT_FIELDS = { ab: "AB", r: "R", rbi: "RBI", k: "K", bb: "BB", hbp: "HBP", sf: "SF", singles: "1B", doubles: "2B", triples: "3B", hr: "HR" };
 let toastTimer;
 
 const byId = (id) => document.getElementById(id);
@@ -273,6 +277,14 @@ function renderRunnerPanel(state) {
   byId("selected-runner").textContent = `${player.number ? `#${player.number} ` : ""}${player.name} · ${BASE_NAMES[selectedBase]}`;
   const allowed = selectedBase === "first" ? ["second", "third", "home", "out"] : selectedBase === "second" ? ["third", "home", "out"] : ["home", "out"];
   byId("runner-destination").innerHTML = allowed.map((base) => `<option value="${base}">${BASE_LABELS[base]}</option>`).join("");
+  const slot = state.game.lineupSlots.find((entry) => entry.currentPlayerId === player.id);
+  const eligible = slot ? state.game.gameDay.filter((assignment) => assignment.status === "bench" && (assignment.role === "substitute" || assignment.playerId === slot.starterPlayerId)) : [];
+  byId("pinch-runner-player").innerHTML = `<option value="">${eligible.length ? "Seleccionar jugador..." : "Sin reemplazos disponibles"}</option>` + eligible.map((assignment) => {
+    const incoming = playerById(state, assignment.playerId);
+    return `<option value="${escapeHtml(incoming.id)}">${escapeHtml(incoming.number ? `#${incoming.number} ` : "")}${escapeHtml(incoming.name)}</option>`;
+  }).join("");
+  byId("pinch-runner-player").disabled = !eligible.length;
+  byId("substitute-runner").disabled = true;
 }
 
 function renderLiveGame(state) {
@@ -350,13 +362,15 @@ function renderLog(state) {
     <article class="log-event ${event.kind === "runner-event" || event.kind === "substitution" ? "runner" : ""}">
       <span class="log-inning">Entrada ${beforeInning}<br>${beforeOuts} out${beforeOuts === 1 ? "" : "s"}</span>
       <div><strong>${event.kind === "substitution" ? `${escapeHtml(event.incomingPlayerName)} entra por ${escapeHtml(event.outgoingPlayerName)}` : `${escapeHtml(event.playerName)} · ${escapeHtml(RESULTS[event.label] ?? event.label)}`}</strong><small>${event.kind === "substitution" ? `Lugar ${event.slotIndex + 1} · ${escapeHtml(POSITIONS[event.position] || event.position)}` : `${escapeHtml(describeBases(beforeBases, state))} → ${escapeHtml(describeBases(afterBases, state))}${event.endedInning ? " · Fin de entrada" : ""}`}</small></div>
-      <span class="log-score">${event.kind === "substitution" ? "Cambio" : event.runsAdded ? `+${event.runsAdded} carrera${event.runsAdded === 1 ? "" : "s"}` : `${event.outsAdded || 0} outs`}</span>
+      <span class="log-score">${event.kind === "substitution" ? event.runnerBase ? `Corredor · ${BASE_LABELS[event.runnerBase]}` : "Cambio" : event.runsAdded ? `+${event.runsAdded} carrera${event.runsAdded === 1 ? "" : "s"}` : `${event.outsAdded || 0} outs`}</span>
     </article>`;
   }).join("");
 }
 
 function renderStats(state) {
   const game = state.game;
+  const editable = state.gameSource === "imported" && game && !game.active;
+  byId("btn-export-stats-json").hidden = !editable;
   const statsEmpty = byId("stats-empty");
   const statsContent = byId("stats-content");
   const statsBadge = byId("stats-game-badge");
@@ -388,7 +402,7 @@ function renderStats(state) {
   if (exportBtn) exportBtn.disabled = false;
   if (printPdfBtn) printPdfBtn.disabled = false;
 
-  const statusText = stats.isActive ? `En vivo · Entr. ${stats.inning}` : "Finalizado";
+  const statusText = editable ? "Importado" : stats.isActive ? `En vivo · Entr. ${stats.inning}` : "Finalizado";
   statsBadge.textContent = statusText;
   byId("stats-matchup-title").textContent = `Ofensiva vs. ${escapeHtml(stats.opponent)}`;
   byId("stats-game-meta").textContent = `${stats.date || "Fecha no especificada"} · Carreras: ${stats.runs}`;
@@ -409,6 +423,7 @@ function renderStats(state) {
           <div class="player-cell-content">
             <span class="player-name-link">${jerseyDisplay}${escapeHtml(p.name)}</span>
             <span class="player-pos-tag">${posDisplay}</span>
+            ${editable ? `<button class="text-button edit-player-stats" type="button" data-player-id="${escapeHtml(p.id)}" aria-label="Editar estadisticas de ${escapeHtml(p.name)}">Editar</button>` : ""}
           </div>
         </td>
         <td class="stat-highlight">${p.ab}</td>
@@ -663,6 +678,22 @@ document.querySelectorAll(".base").forEach((base) => base.addEventListener("clic
 }));
 
 byId("cancel-runner").addEventListener("click", () => { selectedBase = null; renderLiveGame(getState()); });
+byId("pinch-runner-player").addEventListener("change", (event) => {
+  byId("substitute-runner").disabled = !event.target.value;
+});
+byId("substitute-runner").addEventListener("click", () => {
+  const state = getState();
+  const incomingId = byId("pinch-runner-player").value;
+  const outgoing = playerById(state, state.game?.bases[selectedBase]);
+  const incoming = playerById(state, incomingId);
+  if (!outgoing || !incoming || !confirm(`Corredor emergente: ${incoming.name} por ${outgoing.name} en ${BASE_NAMES[selectedBase]}?`)) return;
+  try {
+    substituteRunner(selectedBase, incomingId);
+    selectedBase = null;
+    renderLiveGame(getState());
+    notify(`${incoming.name} entra como corredor emergente`);
+  } catch (error) { notify(error.message); }
+});
 byId("record-runner").addEventListener("click", () => {
   try {
     recordRunnerEvent({ label: byId("runner-event-label").value, from: selectedBase, to: byId("runner-destination").value });
@@ -710,7 +741,7 @@ if (printPdfBtn) {
   });
 }
 
-byId("export-data").addEventListener("click", () => {
+function downloadJson() {
   const blob = new Blob([exportData()], { type: "application/json" });
   const link = document.createElement("a");
   link.href = URL.createObjectURL(blob);
@@ -719,12 +750,47 @@ byId("export-data").addEventListener("click", () => {
   link.click();
   link.remove();
   setTimeout(() => URL.revokeObjectURL(link.href), 1000);
+}
+
+byId("export-data").addEventListener("click", downloadJson);
+byId("btn-export-stats-json").addEventListener("click", downloadJson);
+
+const statsDialog = byId("stats-edit-dialog");
+byId("stats-table-body").addEventListener("click", (event) => {
+  const button = event.target.closest(".edit-player-stats");
+  if (!button) return;
+  const state = getState();
+  if (state.gameSource !== "imported" || state.game?.active) return;
+  const player = calculateGameStats(state.game, state.roster).players.find((entry) => entry.id === button.dataset.playerId);
+  if (!player) return;
+  editingStatsPlayerId = player.id;
+  byId("stats-edit-title").textContent = player.name;
+  byId("stats-edit-fields").innerHTML = Object.entries(STAT_FIELDS).map(([field, label]) => `<label>${label}<input name="${field}" type="number" min="0" step="1" required value="${player[field]}"></label>`).join("");
+  byId("stats-edit-error").textContent = "";
+  statsDialog.showModal();
+});
+byId("cancel-stats-edit").addEventListener("click", () => statsDialog.close());
+byId("stats-edit-form").addEventListener("submit", (event) => {
+  event.preventDefault();
+  const form = new FormData(event.currentTarget);
+  const values = Object.fromEntries(Object.keys(STAT_FIELDS).map((field) => [field, Number(form.get(field))]));
+  try {
+    updateImportedStats(editingStatsPlayerId, values);
+    statsDialog.close();
+    notify("Estadisticas corregidas");
+  } catch (error) { byId("stats-edit-error").textContent = error.message; }
 });
 
 byId("import-data").addEventListener("change", async (event) => {
   const file = event.target.files[0];
   if (!file) return;
-  try { importData(await file.text()); notify("Respaldo importado"); } catch (error) { notify(error.message); }
+  try {
+    importData(await file.text());
+    selectedBase = null;
+    statsDialog.close();
+    switchTab("stats");
+    notify("Respaldo importado");
+  } catch (error) { notify(error.message); }
   event.target.value = "";
 });
 

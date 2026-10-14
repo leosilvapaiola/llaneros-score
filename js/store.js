@@ -5,6 +5,7 @@ const emptyBases = () => ({ first: null, second: null, third: null });
 const initialState = () => ({
   roster: [],
   rosterSourceLoaded: false,
+  gameSource: null,
   game: null,
 });
 
@@ -180,6 +181,7 @@ export function startGame({ opponent, date, lineup, gameDay }) {
   if (lineup.some((playerId) => !starters.some((assignment) => assignment.playerId === playerId))) {
     throw new Error("El lineup contiene un jugador sin posicion de campo.");
   }
+  state.gameSource = "live";
   state.game = {
     active: true,
     opponent: opponent.trim() || "Rival",
@@ -236,11 +238,14 @@ export function substitutePlayer(slotIndex, incomingPlayerId) {
   incoming.status = "active";
   incoming.position = slot.position;
   slot.currentPlayerId = incomingPlayerId;
+  const runnerBase = Object.keys(state.game.bases).find((base) => state.game.bases[base] === outgoingPlayerId);
+  if (runnerBase) state.game.bases[runnerBase] = incomingPlayerId;
 
   completeEvent({
     id: createId(),
     kind: "substitution",
-    label: "Sustitucion",
+    label: runnerBase ? "Corredor emergente" : "Sustitucion",
+    runnerBase: runnerBase || null,
     playerId: incomingPlayerId,
     playerName: playerName(incomingPlayerId),
     incomingPlayerId,
@@ -253,6 +258,16 @@ export function substitutePlayer(slotIndex, incomingPlayerId) {
     runsAdded: 0,
     createdAt: new Date().toISOString(),
   }, before);
+}
+
+export function substituteRunner(base, incomingPlayerId) {
+  if (!state.game?.active) throw new Error("No hay un partido activo.");
+  ensureLineupModel();
+  const runnerId = state.game.bases[base];
+  if (!runnerId) throw new Error("No hay corredor en esa base.");
+  const slot = state.game.lineupSlots.find((entry) => entry.currentPlayerId === runnerId);
+  if (!slot) throw new Error("El corredor no tiene un lugar activo en el lineup.");
+  substitutePlayer(slot.index, incomingPlayerId);
 }
 
 export function recordPlateAppearance(result, movements) {
@@ -464,6 +479,13 @@ export function calculateGameStats(gameState = state.game, roster = state.roster
     }
   }
 
+  for (const [playerId, correction] of Object.entries(gameState.statCorrections || {})) {
+    const player = getPlayerEntry(playerId);
+    Object.assign(player, correction);
+    player.h = player.singles + player.doubles + player.triples + player.hr;
+    player.tb = player.singles + 2 * player.doubles + 3 * player.triples + 4 * player.hr;
+  }
+
   // Calculate totals and averages
   const totals = {
     ab: 0,
@@ -545,7 +567,7 @@ export function calculateGameStats(gameState = state.game, roster = state.roster
     date: gameState.date || "",
     inning: gameState.inning || 1,
     outs: gameState.outs || 0,
-    runs: gameState.runs || totals.r,
+    runs: gameState.statCorrections ? totals.r : gameState.runs || totals.r,
     isActive: Boolean(gameState.active),
   };
 }
@@ -563,10 +585,35 @@ export function exportData() {
 
 export function importData(json) {
   const imported = JSON.parse(json);
-  if (!Array.isArray(imported.roster) || (imported.game !== null && typeof imported.game !== "object")) {
+  if (!imported || !Array.isArray(imported.roster) || (imported.game !== null && (!imported.game || typeof imported.game !== "object" || Array.isArray(imported.game)))) {
     throw new Error("El archivo no contiene datos validos.");
   }
+  if (imported.game && (!Array.isArray(imported.game.lineup) || !Array.isArray(imported.game.gameDay) || !Array.isArray(imported.game.events))) {
+    throw new Error("El archivo no contiene un partido valido.");
+  }
   state = imported;
+  state.gameSource = "imported";
+  if (state.game) state.game.active = false;
+  saveState();
+}
+
+export function updateImportedStats(playerId, values) {
+  if (state.gameSource !== "imported" || !state.game || state.game.active) {
+    throw new Error("Solo puedes editar estadisticas de un partido importado.");
+  }
+  const player = calculateGameStats().players.find((entry) => entry.id === playerId);
+  if (!player) throw new Error("No se encontro el jugador en la planilla.");
+  const fields = ["ab", "r", "rbi", "k", "bb", "hbp", "sf", "singles", "doubles", "triples", "hr"];
+  const correction = Object.fromEntries(fields.map((field) => [field, values[field]]));
+  if (Object.values(correction).some((value) => !Number.isSafeInteger(value) || value < 0)) {
+    throw new Error("Las estadisticas deben ser numeros enteros no negativos.");
+  }
+  const hits = correction.singles + correction.doubles + correction.triples + correction.hr;
+  if (hits + correction.k > correction.ab) {
+    throw new Error("Los hits y ponches no pueden superar los turnos al bate.");
+  }
+  state.game.statCorrections = { ...state.game.statCorrections, [playerId]: correction };
+  state.game.runs = calculateGameStats().totals.r;
   saveState();
 }
 
